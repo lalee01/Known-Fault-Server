@@ -40,13 +40,12 @@ app.get ('/getposts', (req,res)=>{
     const description = req.body.description
 
     db.query(
-        "SELECT * post (title,manufacturer,model,description) VALUES(?,?,?,?)",
-        [title,manufacturer,model,description],
+        "SELECT * FROM post ",
         (err,result) =>{
             if(err) {
                 console.log(err);
             }else {
-                res.send("Values posted")
+                res.send(result)
             }
         }
         
