@@ -3,6 +3,10 @@ const app = express()
 const mysql = require('mysql')
 const cors = require ('cors')
 
+const bcrypt = require ('bcrypt');
+const saltRounds = 10;
+var password2 = "Fkdj^45ci@Jad";
+
 app.use(cors())
 app.use(express.json())
 
@@ -52,6 +56,25 @@ app.get ('/getposts', (req,res)=>{
     )
 })
 
+app.post ('/register', (req,res)=>{
+    const username = req.body.username
+    const password = req.body.password
+    const email = req.body.email
+
+    bcrypt.genSalt(saltRounds, function(err, salt) {  
+        bcrypt.hash(password, salt, function(err, hash) {
+          // Store hash in database here
+    
+    db.query(
+            "INSERT INTO users (username,password,email) VALUES(?,?,?)",
+            [username,hash,email],
+            (err,result) =>{
+            if(err) {
+                console.log(err);
+            }else {
+                res.send("Values posted")
+            }})
+})})})
 app.listen(3001,()=>{
     console.log("server port is 3001")
 });
