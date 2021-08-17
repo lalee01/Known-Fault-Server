@@ -5,7 +5,6 @@ const cors = require ('cors')
 
 const bcrypt = require ('bcrypt');
 const saltRounds = 10;
-var password2 = "Fkdj^45ci@Jad";
 
 app.use(cors())
 app.use(express.json())
@@ -32,8 +31,7 @@ app.post ('/create', (req,res)=>{
             }else {
                 res.send("Values posted")
             }
-        }
-        
+        }  
     )
 })
 
@@ -51,8 +49,7 @@ app.get ('/getposts', (req,res)=>{
             }else {
                 res.send(result)
             }
-        }
-        
+        }       
     )
 })
 
@@ -63,18 +60,43 @@ app.post ('/register', (req,res)=>{
 
     bcrypt.genSalt(saltRounds, function(err, salt) {  
         bcrypt.hash(password, salt, function(err, hash) {
-          // Store hash in database here
+    
+            db.query(
+                "INSERT INTO users (username,password,email) VALUES(?,?,?)",
+                [username,hash,email],
+                (err,result) =>{
+                    if(err) {
+                        console.log(err);
+                    }else {
+                        res.send("Values posted")
+                    }
+                }
+            )
+        })
+    })
+})
+
+app.post ('/login', (req,res)=>{
+    const username = req.body.username
+    const loginPassword = req.body.password
     
     db.query(
-            "INSERT INTO users (username,password,email) VALUES(?,?,?)",
-            [username,hash,email],
-            (err,result) =>{
+        "SELECT password FROM users WHERE username=?",
+        [username],
+        (err,result) =>{
             if(err) {
-                console.log(err);
+                console.log("err", err);
+                throw Error("Wrong username or password")
             }else {
-                res.send("Values posted")
-            }})
-})})})
+                res.send(result)
+                console.log("result", result[0].password)
+                console.log(bcrypt.compareSync(loginPassword, result[0].password)) // true
+            }
+        }
+    )
+        
+})
+
 app.listen(3001,()=>{
     console.log("server port is 3001")
 });
