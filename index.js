@@ -40,6 +40,7 @@ app.get ('/getposts', (req,res)=>{
     const manufacturer = req.body.manufacturer
     const model = req.body.model
     const description = req.body.description
+    const id = req.body.id
 
     db.query(
         "SELECT * FROM post ",
@@ -58,28 +59,43 @@ app.post ('/register', (req,res)=>{
     const password = req.body.password
     const email = req.body.email
 
-    bcrypt.genSalt(saltRounds, function(err, salt) {  
-        bcrypt.hash(password, salt, function(err, hash) {
-    
-            db.query(
-                "INSERT INTO users (username,password,email) VALUES(?,?,?)",
-                [username,hash,email],
-                (err,result) =>{
-                    if(err) {
-                        console.log(err);
-                    }else {
-                        res.send("Values posted")
-                    }
+    db.query(
+        "SELECT * FROM users WHERE username=(?) OR email=(?)",
+        [username,email],
+        (err,result) =>{
+            if(err) {
+                console.log(err);
+            }else {
+                res.send("Values posted")
+                if(result<2){
+                    console.log("nincs ilyen felhasználó")
+                    bcrypt.genSalt(saltRounds, function(err, salt) {  
+                        bcrypt.hash(password, salt, function(err, hash) {
+                    
+                            db.query(
+                                "INSERT INTO users (username,password,email) VALUES(?,?,?)",
+                                [username,hash,email],
+                                (err,result) =>{
+                                    if(err) {
+                                        console.log(err);
+                                    }else {
+                                        res.send("Values posted")
+                                    }
+                                }
+                            )
+                        })
+                    })
+                }else{
+                    console.log("már van ilyen")
                 }
-            )
-        })
-    })
+            }
+        }
+    )
 })
 
 app.post ('/login', (req,res)=>{
     const username = req.body.username
     const loginPassword = req.body.password
-    
     db.query(
         "SELECT password FROM users WHERE username=?",
         [username],
@@ -88,14 +104,16 @@ app.post ('/login', (req,res)=>{
                 console.log("err", err);
                 throw Error("Wrong username or password")
             }else {
-                res.send(result)
-                console.log("result", result[0].password)
-                console.log(bcrypt.compareSync(loginPassword, result[0].password)) // true
+                if(result<1){
+                    res.send("Hibás felhasználónév vagy jelszó!")
+                }else{    
+                    res.send(bcrypt.compareSync(loginPassword, result[0].password))
+                }
             }
         }
-    )
-        
+    )        
 })
+
 
 app.listen(3001,()=>{
     console.log("server port is 3001")
