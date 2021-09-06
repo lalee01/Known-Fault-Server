@@ -54,6 +54,25 @@ app.get ('/getposts', (req,res)=>{
     )
 })
 
+app.get ('/audi', (req,res)=>{
+    const title = req.body.title
+    const manufacturer = req.body.manufacturer
+    const model = req.body.model
+    const description = req.body.description
+    const id = req.body.id
+
+    db.query(
+        "SELECT * FROM post WHERE manufacturer='Audi'",
+        (err,result) =>{
+            if(err) {
+                console.log(err);
+            }else {
+                res.send(result)
+            }
+        }       
+    )
+})
+
 app.post ('/register', (req,res)=>{
     const username = req.body.username
     const password = req.body.password
@@ -104,14 +123,14 @@ app.post ('/login', (req,res)=>{
                 console.log("err", err);
                 throw Error("Wrong username or password")
             }else {
-                if(result<1){
-                    res.send("Hibás felhasználónév vagy jelszó!")
+                if(result<1 || bcrypt.compareSync(loginPassword, result[0].password)==false){
+                    res.send(false)
                 }else{    
                     res.send(bcrypt.compareSync(loginPassword, result[0].password))
                 }
             }
         }
-    )        
+    )
 })
 
 
