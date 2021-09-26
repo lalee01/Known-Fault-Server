@@ -1,8 +1,8 @@
 const express = require('express')
+const dotenv = require('dotenv').config()
 const app = express()
 const mysql = require('mysql')
 const cors = require ('cors')
-
 const bcrypt = require ('bcrypt');
 const saltRounds = 10;
 
@@ -10,10 +10,10 @@ app.use(cors())
 app.use(express.json())
 
 const db= mysql.createPool({
-    user:'root',
-    host:'localhost',
-    password:'',
-    database:'posts',
+    user:process.env.DB_USER,
+    host:process.env.DB_HOST,
+    password:process.env.DB_PASS,
+    database:process.env.DB_DATABASE,
 })
 
 app.post ('/create', (req,res)=>{
