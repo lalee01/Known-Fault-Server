@@ -5,9 +5,22 @@ const mysql = require('mysql')
 const cors = require ('cors')
 const bcrypt = require ('bcrypt');
 const saltRounds = 10;
+const validator = require('validator');
+const multer = require('multer')
 
 app.use(cors())
 app.use(express.json())
+app.use(express.static('public'))
+
+const storage = multer.diskStorage({
+    destination: (req,file,cb) =>{
+        cb(null,'public')
+    },
+    filename: (req,file,cb) =>{
+        cb(null,Date.now() + '-' + file.originalname) 
+    }
+})
+const upload = multer({storage}).array('file');
 
 const db= mysql.createPool({
     user:process.env.DB_USER,
@@ -34,6 +47,16 @@ app.post ('/create', (req,res)=>{
         }  
     )
 })
+
+app.post('/upload', (req, res) => {
+    upload(req, res, (err) => {
+        if (err) {
+            return res.status(500).json(err)
+        }
+
+        return res.status(200).send(req.files)
+    })
+});
 
 app.get ('/getposts', (req,res)=>{
     const title = req.body.title
