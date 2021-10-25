@@ -17,7 +17,7 @@ const storage = multer.diskStorage({
         cb(null,'public')
     },
     filename: (req,file,cb) =>{
-        cb(null,Date.now() + '-' + file.originalname) 
+        cb(null,file.originalname) 
     }
 })
 const upload = multer({storage}).array('file');
@@ -34,10 +34,11 @@ app.post ('/create', (req,res)=>{
     const manufacturer = req.body.manufacturer
     const model = req.body.model
     const description = req.body.description
+    const postid = req.body.postid
 
     db.query(
-        "INSERT INTO post (title,manufacturer,model,description) VALUES(?,?,?,?)",
-        [title,manufacturer,model,description],
+        "INSERT INTO post (title,manufacturer,model,description,postid) VALUES(?,?,?,?,?)",
+        [title,manufacturer,model,description,postid],
         (err,result) =>{
             if(err) {
                 console.log(err);
@@ -58,6 +59,27 @@ app.post('/upload', (req, res) => {
     })
 });
 
+app.post('/uploaddb', (req, res) => {
+    const username = req.body.username
+    const postid = req.body.postid
+    const name = req.body.name
+    const source = req.body.source
+    
+
+    db.query(
+        "INSERT INTO uploads (name,postid,username,source) VALUES(?,?,?,?)",
+        [name,postid,username,source],
+        (err,result) =>{
+            if(err) {
+                console.log(err);
+            }else {
+                res.send("Values posted")
+            }
+        }  
+    )
+
+});
+
 app.get ('/getposts', (req,res)=>{
     const title = req.body.title
     const manufacturer = req.body.manufacturer
@@ -66,7 +88,7 @@ app.get ('/getposts', (req,res)=>{
     const id = req.body.id
 
     db.query(
-        "SELECT * FROM post ",
+        "SELECT * FROM SELECT uploads.name FROM post INNER JOIN uploads ON post.postid=uploads.postid ",
         (err,result) =>{
             if(err) {
                 console.log(err);
