@@ -7,6 +7,16 @@ const bcrypt = require ('bcrypt');
 const saltRounds = 10;
 const validator = require('validator');
 const multer = require('multer')
+const knex = require('knex')({
+    client: 'mysql',
+    connection: {
+      host : process.env.DB_HOST,
+      port : process.env.DB_PORT,
+      user : process.env.DB_USER,
+      password : process.env.DB_PASS,
+      database : process.env.DB_DATABASE
+    }
+  });
 
 app.use(cors())
 app.use(express.json())
@@ -80,23 +90,44 @@ app.post('/uploaddb', (req, res) => {
 
 });
 
-app.get ('/getposts', (req,res)=>{
-    const title = req.body.title
-    const manufacturer = req.body.manufacturer
-    const model = req.body.model
-    const description = req.body.description
-    const id = req.body.id
+app.get ('/getposts',async(req,res)=>{
+  //  const title = req.body.title
+  //  const manufacturer = req.body.manufacturer
+  //  const model = req.body.model
+  //  const description = req.body.description
+    //const id = req.body.id
+   // const source = req.body.source
+  //  const name = req.body.name
+ //   const username = req.body.username 
 
-    db.query(
-        "SELECT * FROM SELECT uploads.name FROM post INNER JOIN uploads ON post.postid=uploads.postid ",
-        (err,result) =>{
-            if(err) {
-                console.log(err);
-            }else {
-                res.send(result)
+    const readPosts = await knex.select().from('post')
+    const readImages = await knex.select().from('uploads')
+    const joinedTables = await knex.select().from('post').join('uploads', 'post.postid' , '=', 'uploads.postid')
+    const collectImages = await knex.select('name').from('uploads').where('postid','=' , '9071cedbdad9878')
+    const selectedImages = []
+    const joining =
+    readPosts.map((item,key)=>{
+        selectedImages.push({
+            model:item.model,
+            title: item.title,
+            manufacturer:item.manufacturer,
+            description:item.description,
+            postid:item.postid,
+            name:[]
+        })
+        readImages.map((pic)=>{
+            if(pic.postid==selectedImages[key].postid){
+                selectedImages[key].name.push(pic.name)
             }
-        }       
-    )
+
+        })
+    })
+  
+
+    console.log(selectedImages)
+
+    res.send(selectedImages)
+
 })
 
 app.get ('/audi', (req,res)=>{
