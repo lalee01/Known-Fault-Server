@@ -91,19 +91,10 @@ app.post('/uploaddb', (req, res) => {
 });
 
 app.get ('/getposts',async(req,res)=>{
-  //  const title = req.body.title
-  //  const manufacturer = req.body.manufacturer
-  //  const model = req.body.model
-  //  const description = req.body.description
-    //const id = req.body.id
-   // const source = req.body.source
-  //  const name = req.body.name
- //   const username = req.body.username 
 
     const readPosts = await knex.select().from('post')
     const readImages = await knex.select().from('uploads')
     const joinedTables = await knex.select().from('post').join('uploads', 'post.postid' , '=', 'uploads.postid')
-    const collectImages = await knex.select('name').from('uploads').where('postid','=' , '9071cedbdad9878')
     const selectedImages = []
     const joining =
     readPosts.map((item,key)=>{
@@ -149,64 +140,36 @@ app.get ('/audi', (req,res)=>{
     )
 })
 
-app.post ('/register', (req,res)=>{
+app.post ('/register', async(req,res)=>{
     const username = req.body.username
     const password = req.body.password
     const email = req.body.email
+    const sameDataCheck= await knex('users').select().where(function(){this.where('username',username).orWhere({email:email})})
 
-    db.query(
-        "SELECT * FROM users WHERE username=(?) OR email=(?)",
-        [username,email],
-        (err,result) =>{
-            if(err) {
-                console.log(err);
-            }else {
-                res.send("Values posted")
-                if(result<2){
-                    console.log("nincs ilyen felhasználó")
-                    bcrypt.genSalt(saltRounds, function(err, salt) {  
-                        bcrypt.hash(password, salt, function(err, hash) {
-                    
-                            db.query(
-                                "INSERT INTO users (username,password,email) VALUES(?,?,?)",
-                                [username,hash,email],
-                                (err,result) =>{
-                                    if(err) {
-                                        console.log(err);
-                                    }else {
-                                        res.send("Values posted")
-                                    }
-                                }
-                            )
-                        })
-                    })
-                }else{
-                    console.log("már van ilyen")
-                }
-            }
-        }
-    )
+
+    if(sameDataCheck<2){
+        bcrypt.genSalt(saltRounds,   function(err, salt) {  
+            bcrypt.hash(password, salt, async function(err, hash) {
+                await knex('users').insert({ username:username,password:hash,email:email})
+                res.send(["Sikeres regisztráció",true])
+            })
+        })
+    }else{
+        res.send(["Van ilyen felhasználó",false])
+    }
+
 })
 
-app.post ('/login', (req,res)=>{
+app.post ('/login', async(req,res)=>{
     const username = req.body.username
     const loginPassword = req.body.password
-    db.query(
-        "SELECT password FROM users WHERE username=?",
-        [username],
-        (err,result) =>{
-            if(err) {
-                console.log("err", err);
-                throw Error("Wrong username or password")
-            }else {
-                if(result<1 || bcrypt.compareSync(loginPassword, result[0].password)==false){
-                    res.send(false)
-                }else{    
-                    res.send(bcrypt.compareSync(loginPassword, result[0].password))
-                }
-            }
+    const getData= await knex('users').select().where({username:username})
+    
+        if(getData>1 || bcrypt.compareSync(loginPassword, getData[0].password)==false){
+            res.send(false)
+        }else{
+            res.send(bcrypt.compareSync(loginPassword, getData[0].password))
         }
-    )
 })
 
 
