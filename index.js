@@ -1,7 +1,6 @@
 const express = require('express')
 const dotenv = require('dotenv').config()
 const app = express()
-const mysql = require('mysql')
 const cors = require ('cors')
 const bcrypt = require ('bcrypt');
 const saltRounds = 10;
@@ -32,31 +31,24 @@ const storage = multer.diskStorage({
 })
 const upload = multer({storage}).array('file');
 
-const db= mysql.createPool({
-    user:process.env.DB_USER,
-    host:process.env.DB_HOST,
-    password:process.env.DB_PASS,
-    database:process.env.DB_DATABASE,
-})
-
-app.post ('/create', (req,res)=>{
+app.post ('/create', async (req,res)=>{
     const title = req.body.title
     const manufacturer = req.body.manufacturer
     const model = req.body.model
     const description = req.body.description
     const postid = req.body.postid
 
-    db.query(
-        "INSERT INTO post (title,manufacturer,model,description,postid) VALUES(?,?,?,?,?)",
-        [title,manufacturer,model,description,postid],
-        (err,result) =>{
-            if(err) {
-                console.log(err);
-            }else {
-                res.send("Values posted")
-            }
-        }  
-    )
+    if(
+    validator.isLength(title,{min:3,max:16})&&
+    validator.isLength(manufacturer,{min:1,max:16})&&
+    validator.isLength(model,{min:1,max:16})&&
+    validator.isLength(description,{min:6,max:128})&&
+    validator.isLength(source,{min:1,max:16})
+    ){
+        await knex('post').insert({title:title,manufacturer:manufacturer,model:model,description:description,postid:postid})
+    }else{
+        res.send('Beviteli mező Error')
+    }
 })
 
 app.post('/upload', (req, res) => {
@@ -64,29 +56,16 @@ app.post('/upload', (req, res) => {
         if (err) {
             return res.status(500).json(err)
         }
-
         return res.status(200).send(req.files)
     })
 });
 
-app.post('/uploaddb', (req, res) => {
+app.post('/uploaddb', async (req, res) => {
     const username = req.body.username
     const postid = req.body.postid
     const name = req.body.name
     const source = req.body.source
-    
-
-    db.query(
-        "INSERT INTO uploads (name,postid,username,source) VALUES(?,?,?,?)",
-        [name,postid,username,source],
-        (err,result) =>{
-            if(err) {
-                console.log(err);
-            }else {
-                res.send("Values posted")
-            }
-        }  
-    )
+    const dataSendDB = await knex('uploads').insert({ username:username,postid:postid,name:name,source:source})
 
 });
 
@@ -104,60 +83,46 @@ app.get ('/getposts',async(req,res)=>{
             manufacturer:item.manufacturer,
             description:item.description,
             postid:item.postid,
-            name:[]
+            name:[],
+            date:item.date,
+            username:[],
+            source:[]
+
         })
         readImages.map((pic)=>{
             if(pic.postid==selectedImages[key].postid){
                 selectedImages[key].name.push(pic.name)
+                selectedImages[key].username.push(pic.username)
+                selectedImages[key].source.push(pic.source)
             }
-
         })
     })
-  
-
-    console.log(selectedImages)
-
     res.send(selectedImages)
 
 })
-
-app.get ('/audi', (req,res)=>{
-    const title = req.body.title
-    const manufacturer = req.body.manufacturer
-    const model = req.body.model
-    const description = req.body.description
-    const id = req.body.id
-
-    db.query(
-        "SELECT * FROM post WHERE manufacturer='Audi'",
-        (err,result) =>{
-            if(err) {
-                console.log(err);
-            }else {
-                res.send(result)
-            }
-        }       
-    )
-})
-
 app.post ('/register', async(req,res)=>{
     const username = req.body.username
     const password = req.body.password
     const email = req.body.email
     const sameDataCheck= await knex('users').select().where(function(){this.where('username',username).orWhere({email:email})})
 
-
-    if(sameDataCheck<2){
-        bcrypt.genSalt(saltRounds,   function(err, salt) {  
-            bcrypt.hash(password, salt, async function(err, hash) {
-                await knex('users').insert({ username:username,password:hash,email:email})
-                res.send(["Sikeres regisztráció",true])
+    if(
+    validator.isLength(username,{min:6,max:16})&&
+    validator.isLength(password,{min:6,max:16})&&
+    validator.isEmail(email)&&
+    validator.isLength(email,{min:6,max:256})&&
+    sameDataCheck<2
+    )
+        {
+            bcrypt.genSalt(saltRounds,   function(err, salt) {  
+                bcrypt.hash(password, salt, async function(err, hash) {
+                    await knex('users').insert({ username:username,password:hash,email:email})
+                    res.send(["Sikeres regisztráció",true])
+                })
             })
-        })
     }else{
-        res.send(["Van ilyen felhasználó",false])
+        res.send(["Van ilyen felhasználó vagy a feltételek nem teljesülnek",false])
     }
-
 })
 
 app.post ('/login', async(req,res)=>{
@@ -171,6 +136,45 @@ app.post ('/login', async(req,res)=>{
             res.send(bcrypt.compareSync(loginPassword, getData[0].password))
         }
 })
+
+app.get ('/post/:postid',async(req,res)=>{
+
+    const readPosts = await knex.select().from('post').where('post.postid',req.params.postid)
+    const readImages = await knex.select().from('uploads').where('uploads.postid',req.params.postid)
+    const selectedPost = []
+
+
+    const joining =
+    readPosts.map((item,key)=>{
+        selectedPost.push({
+            model:item.model,
+            title: item.title,
+            manufacturer:item.manufacturer,
+            description:item.description,
+            postid:item.postid,
+            name:[],
+            date:item.date,
+            username:[],
+            source:[]
+
+        })
+        readImages.map((pic)=>{
+            if(pic.postid==selectedPost[key].postid){
+                selectedPost[key].name.push(pic.name)
+                selectedPost[key].username.push(pic.username)
+                selectedPost[key].source.push(pic.source)
+            }
+        })
+    })
+    res.send(selectedPost)
+
+
+    console.log('API call with postid:')
+    console.log(req.params.postid)
+    console.log(selectedPost)
+
+})
+
 
 
 app.listen(3001,()=>{
