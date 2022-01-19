@@ -6,8 +6,8 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start":"npm run build && node ./build/index.mjs",
-    "build":"tsc "
+    "start": "npm run build && node ./build/index.mjs",
+    "build": "tsc "
   },
   "author": "",
   "license": "ISC",

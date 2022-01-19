@@ -1,11 +1,12 @@
+import 'dotenv/config';
 ;
 const defaults = {
     client: 'mysql',
     connection: {
-        host: process.env.DB_HOST,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_DATABASE
+        host: 'DB_HOST',
+        user: 'DB_USER',
+        password: 'DB_PASSWORD',
+        database: 'DB_DATABASE'
     },
     pool: {
         min: 2,

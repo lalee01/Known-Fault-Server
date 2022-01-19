@@ -8,7 +8,11 @@ import validator from 'validator';
 import multer from 'multer'
 import mongoose from 'mongoose'
 import authRoutes from './Component/controllers/auth.controller.js'
-import knex , {Config} from 'knex'
+import Knex , {Config} from 'knex'
+import knexConfig from './Component/knexConfig/knexConfigFile.js'
+
+const knex =Knex(knexConfig.local)
+console.log(knexConfig.local)
 
 app.use(cors())
 app.use(express.json())
