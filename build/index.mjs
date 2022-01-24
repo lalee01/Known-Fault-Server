@@ -162,6 +162,25 @@ app.get('/post/:postid', (req, res) => __awaiter(void 0, void 0, void 0, functio
     console.log(req.params.postid);
     console.log(selectedPost);
 }));
+app.post('/yt', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const manu = req.body.manu;
+    const title = req.body.title;
+    const ytLink = req.body.ytLink;
+    const description = req.body.description;
+    if (validator.isLength(title, { min: 3, }) &&
+        validator.isLength(ytLink, { min: 1 }) &&
+        validator.isLength(description, { min: 6 })) {
+        yield knex('yt').insert({ manu: manu, title: title, ytLink: ytLink, description: description });
+        res.send('Elküldve');
+    }
+    else {
+        res.send('Rossz');
+    }
+}));
+app.get('/getyt', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const readPosts = yield knex.select().from('yt');
+    res.send('readPosts');
+}));
 app.listen(3001, () => {
     console.log("server port is 3001");
 });

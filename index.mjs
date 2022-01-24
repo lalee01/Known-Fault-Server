@@ -185,6 +185,31 @@ app.get ('/post/:postid',async(req,res)=>{
 
 })
 
+app.post ('/yt', async (req,res)=>{
+    const manu = req.body.manu
+    const title = req.body.title
+    const ytLink = req.body.ytLink
+    const description = req.body.description
+
+
+    if(
+    validator.isLength(title,{min:3,})&&
+    validator.isLength(ytLink,{min:1})&&
+    validator.isLength(description,{min:6})
+    ){
+        await knex('yt').insert({manu:manu,title:title,ytLink:ytLink,description:description})
+        res.send('Elküldve')
+    }else{
+        res.send('Rossz')
+    }
+})
+app.get ('/getyt',async(req,res)=>{
+
+    const readPosts = await knex.select().from('yt')
+    
+    res.send('readPosts')
+
+})
 
 
 app.listen(3001,()=>{
