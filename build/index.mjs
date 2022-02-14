@@ -46,16 +46,10 @@ app.post('/create', (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     const description = req.body.description;
     const postid = req.body.postid;
     const source = req.body.source;
-    if (validator.isLength(title, { min: 3, max: 16 }) &&
-        validator.isLength(manufacturer, { min: 1, max: 16 }) &&
-        validator.isLength(model, { min: 1, max: 16 }) &&
-        validator.isLength(description, { min: 6, max: 128 }) &&
-        validator.isLength(source, { min: 1, max: 16 })) {
-        yield knex('post').insert({ title: title, manufacturer: manufacturer, model: model, description: description, postid: postid });
-    }
-    else {
-        res.send('Beviteli mező Error');
-    }
+    const ytLink = req.body.ytLink;
+    yield knex('post').insert({ title: title, manufacturer: manufacturer, model: model, description: description, postid: postid });
+    yield knex('yt').insert({ ytLink: ytLink, postid: postid });
+    res.send('Beviteli mező Error');
 }));
 app.post('/upload', (req, res) => {
     upload(req, res, (err) => {
@@ -136,50 +130,61 @@ app.post('/login', (req, res) => __awaiter(void 0, void 0, void 0, function* () 
 app.get('/post/:postid', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const readPosts = yield knex.select().from('post').where('post.postid', req.params.postid);
     const readImages = yield knex.select().from('uploads').where('uploads.postid', req.params.postid);
+    const readYtLink = yield knex.select().from('yt').where('yt.postid', req.params.postid);
     const selectedPost = [];
     const joining = readPosts.map((item, key) => {
-        selectedPost.push({
+        const payload = {
             model: item.model,
             title: item.title,
             manufacturer: item.manufacturer,
             description: item.description,
             postid: item.postid,
-            name: [],
             date: item.date,
+            name: [],
             username: [],
-            source: []
-        });
+            source: [],
+            link: []
+        };
         readImages.map((pic) => {
-            if (pic.postid == selectedPost[key].postid) {
-                selectedPost[key].name.push(pic.name);
-                selectedPost[key].username.push(pic.username);
-                selectedPost[key].source.push(pic.source);
+            if (pic.postid === payload.postid) {
+                payload.name.push(pic.name);
+                payload.username.push(pic.username);
+                payload.source.push(pic.source);
             }
         });
+        readYtLink.map((link) => {
+            if (link.postid === payload.postid) {
+                payload.link.push(link.ytLink);
+            }
+        });
+        return payload;
     });
-    res.send(selectedPost);
+    res.send(joining);
+    // const joining =
+    // readPosts.map((item,key)=>{
+    //     selectedPost.push({
+    //         model:item.model,
+    //         title: item.title,
+    //         manufacturer:item.manufacturer,
+    //         description:item.description,
+    //         postid:item.postid,
+    //         name:[],
+    //         date:item.date,
+    //         username:[],
+    //         source:[]
+    //     })
+    //     readImages.map((pic)=>{
+    //         if(pic.postid==selectedPost[key].postid){
+    //             selectedPost[key].name.push(pic.name)
+    //             selectedPost[key].username.push(pic.username)
+    //             selectedPost[key].source.push(pic.source)
+    //         }
+    //     })
+    // })
+    // res.send(selectedPost)
     console.log('API call with postid:');
     console.log(req.params.postid);
-    console.log(selectedPost);
-}));
-app.post('/yt', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const manu = req.body.manu;
-    const title = req.body.title;
-    const ytLink = req.body.ytLink;
-    const description = req.body.description;
-    if (validator.isLength(title, { min: 3, }) &&
-        validator.isLength(ytLink, { min: 1 }) &&
-        validator.isLength(description, { min: 6 })) {
-        yield knex('yt').insert({ manu: manu, title: title, ytLink: ytLink, description: description });
-        res.send('Elküldve');
-    }
-    else {
-        res.send('Rossz');
-    }
-}));
-app.get('/getyt', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const readPosts = yield knex.select().from('yt');
-    res.send('readPosts');
+    console.log(joining);
 }));
 app.listen(3001, () => {
     console.log("server port is 3001");

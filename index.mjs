@@ -44,18 +44,13 @@ app.post ('/create', async (req,res)=>{
     const description = req.body.description
     const postid = req.body.postid    
     const source = req.body.source
+    const ytLink = req.body.ytLink
 
-    if(
-    validator.isLength(title,{min:3,max:16})&&
-    validator.isLength(manufacturer,{min:1,max:16})&&
-    validator.isLength(model,{min:1,max:16})&&
-    validator.isLength(description,{min:6,max:128})&&
-    validator.isLength(source,{min:1,max:16})
-    ){
+    
         await knex('post').insert({title:title,manufacturer:manufacturer,model:model,description:description,postid:postid})
-    }else{
+        await knex('yt').insert({ytLink:ytLink,postid:postid})
         res.send('Beviteli mező Error')
-    }
+
 })
 
 app.post('/upload', (req, res) => {
@@ -151,66 +146,72 @@ app.get ('/post/:postid',async(req,res)=>{
 
     const readPosts = await knex.select().from('post').where('post.postid',req.params.postid)
     const readImages = await knex.select().from('uploads').where('uploads.postid',req.params.postid)
+    const readYtLink = await knex.select().from('yt').where('yt.postid',req.params.postid)
     const selectedPost = []
 
-
-    const joining =
-    readPosts.map((item,key)=>{
-        selectedPost.push({
-            model:item.model,
+    const joining = readPosts.map((item,key)=>{
+        const payload =  {
+            model: item.model,
             title: item.title,
-            manufacturer:item.manufacturer,
-            description:item.description,
-            postid:item.postid,
-            name:[],
-            date:item.date,
-            username:[],
-            source:[]
+            manufacturer: item.manufacturer,
+            description: item.description,
+            postid: item.postid,
+            date: item.date,
+            name: [],
+            username: [],
+            source: [],
+            link:[]
+        }
 
-        })
         readImages.map((pic)=>{
-            if(pic.postid==selectedPost[key].postid){
-                selectedPost[key].name.push(pic.name)
-                selectedPost[key].username.push(pic.username)
-                selectedPost[key].source.push(pic.source)
+            if(pic.postid === payload.postid){
+                payload.name.push(pic.name)
+                payload.username.push(pic.username)
+                payload.source.push(pic.source)
             }
         })
+        readYtLink.map((link)=>{
+            if(link.postid === payload.postid){
+                payload.link.push(link.ytLink)
+            }
+        })
+        
+        
+        return payload
     })
-    res.send(selectedPost)
+ 
+    res.send(joining)
+
+    // const joining =
+    // readPosts.map((item,key)=>{
+    //     selectedPost.push({
+    //         model:item.model,
+    //         title: item.title,
+    //         manufacturer:item.manufacturer,
+    //         description:item.description,
+    //         postid:item.postid,
+    //         name:[],
+    //         date:item.date,
+    //         username:[],
+    //         source:[]
+
+    //     })
+    //     readImages.map((pic)=>{
+    //         if(pic.postid==selectedPost[key].postid){
+    //             selectedPost[key].name.push(pic.name)
+    //             selectedPost[key].username.push(pic.username)
+    //             selectedPost[key].source.push(pic.source)
+    //         }
+    //     })
+    // })
+    // res.send(selectedPost)
 
 
     console.log('API call with postid:')
     console.log(req.params.postid)
-    console.log(selectedPost)
+    console.log(joining)
 
 })
-
-app.post ('/yt', async (req,res)=>{
-    const manu = req.body.manu
-    const title = req.body.title
-    const ytLink = req.body.ytLink
-    const description = req.body.description
-
-
-    if(
-    validator.isLength(title,{min:3,})&&
-    validator.isLength(ytLink,{min:1})&&
-    validator.isLength(description,{min:6})
-    ){
-        await knex('yt').insert({manu:manu,title:title,ytLink:ytLink,description:description})
-        res.send('Elküldve')
-    }else{
-        res.send('Rossz')
-    }
-})
-app.get ('/getyt',async(req,res)=>{
-
-    const readPosts = await knex.select().from('yt')
-    
-    res.send('readPosts')
-
-})
-
 
 app.listen(3001,()=>{
     console.log("server port is 3001")
