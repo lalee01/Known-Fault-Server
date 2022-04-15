@@ -147,7 +147,6 @@ app.get ('/post/:postid',async(req,res)=>{
     const readPosts = await knex.select().from('post').where('post.postid',req.params.postid)
     const readImages = await knex.select().from('uploads').where('uploads.postid',req.params.postid)
     const readYtLink = await knex.select().from('yt').where('yt.postid',req.params.postid)
-    const selectedPost = []
 
     const joining = readPosts.map((item,key)=>{
         const payload =  {
@@ -179,33 +178,9 @@ app.get ('/post/:postid',async(req,res)=>{
         
         return payload
     })
- 
-    res.send(joining)
-
-    // const joining =
-    // readPosts.map((item,key)=>{
-    //     selectedPost.push({
-    //         model:item.model,
-    //         title: item.title,
-    //         manufacturer:item.manufacturer,
-    //         description:item.description,
-    //         postid:item.postid,
-    //         name:[],
-    //         date:item.date,
-    //         username:[],
-    //         source:[]
-
-    //     })
-    //     readImages.map((pic)=>{
-    //         if(pic.postid==selectedPost[key].postid){
-    //             selectedPost[key].name.push(pic.name)
-    //             selectedPost[key].username.push(pic.username)
-    //             selectedPost[key].source.push(pic.source)
-    //         }
-    //     })
-    // })
-    // res.send(selectedPost)
-
+        res.send(joining)
+    
+    
 
     console.log('API call with postid:')
     console.log(req.params.postid)
@@ -213,6 +188,55 @@ app.get ('/post/:postid',async(req,res)=>{
 
 })
 
+app.get ('/manufacturer/:manufacturer',async(req,res)=>{
+
+    const readPosts = await knex.select().from('post').where('post.manufacturer',req.params.manufacturer)
+    const readImages = await knex.select().from('uploads')
+    if (readPosts.length >1){
+        const joining = readPosts.map((item,key)=>{
+            const payload =  {
+                model: item.model,
+                title: item.title,
+                manufacturer: item.manufacturer,
+                description: item.description,
+                postid: item.postid,
+                date: item.date,
+                name: [],
+            }
+
+            readImages.map((pic)=>{
+                if(pic.postid === payload.postid){
+                    payload.name.push(pic.name)
+                }
+            })
+            
+            return payload
+        })
+        res.send(joining)
+        console.log(joining)
+    }else{
+        console.log('Ehhez a gyártóhoz nincs post!!!!')
+        const errorMsg = 'Ehhez a gyártóhoz nincs post!!!!'
+        const error = []
+        const addError = error.push(errorMsg)
+        res.send(readPosts)
+        console.log(error)
+        //res.send("Sorry! We don't have any post for this manufacturer.")
+    }
+})
+
+app.get ('/counter',async(req,res)=>{
+
+    const readPosts = await knex.select().from('post')
+    const noPost = []
+
+    const counter = noPost.push(readPosts.length)
+    
+    res.send(noPost)
+    console.log(readPosts.length)
+    console.log(noPost)
+
+})
 app.listen(3001,()=>{
     console.log("server port is 3001")
 });

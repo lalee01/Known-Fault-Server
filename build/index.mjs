@@ -131,7 +131,6 @@ app.get('/post/:postid', (req, res) => __awaiter(void 0, void 0, void 0, functio
     const readPosts = yield knex.select().from('post').where('post.postid', req.params.postid);
     const readImages = yield knex.select().from('uploads').where('uploads.postid', req.params.postid);
     const readYtLink = yield knex.select().from('yt').where('yt.postid', req.params.postid);
-    const selectedPost = [];
     const joining = readPosts.map((item, key) => {
         const payload = {
             model: item.model,
@@ -160,31 +159,51 @@ app.get('/post/:postid', (req, res) => __awaiter(void 0, void 0, void 0, functio
         return payload;
     });
     res.send(joining);
-    // const joining =
-    // readPosts.map((item,key)=>{
-    //     selectedPost.push({
-    //         model:item.model,
-    //         title: item.title,
-    //         manufacturer:item.manufacturer,
-    //         description:item.description,
-    //         postid:item.postid,
-    //         name:[],
-    //         date:item.date,
-    //         username:[],
-    //         source:[]
-    //     })
-    //     readImages.map((pic)=>{
-    //         if(pic.postid==selectedPost[key].postid){
-    //             selectedPost[key].name.push(pic.name)
-    //             selectedPost[key].username.push(pic.username)
-    //             selectedPost[key].source.push(pic.source)
-    //         }
-    //     })
-    // })
-    // res.send(selectedPost)
     console.log('API call with postid:');
     console.log(req.params.postid);
     console.log(joining);
+}));
+app.get('/manufacturer/:manufacturer', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const readPosts = yield knex.select().from('post').where('post.manufacturer', req.params.manufacturer);
+    const readImages = yield knex.select().from('uploads');
+    if (readPosts.length > 1) {
+        const joining = readPosts.map((item, key) => {
+            const payload = {
+                model: item.model,
+                title: item.title,
+                manufacturer: item.manufacturer,
+                description: item.description,
+                postid: item.postid,
+                date: item.date,
+                name: [],
+            };
+            readImages.map((pic) => {
+                if (pic.postid === payload.postid) {
+                    payload.name.push(pic.name);
+                }
+            });
+            return payload;
+        });
+        res.send(joining);
+        console.log(joining);
+    }
+    else {
+        console.log('Ehhez a gyártóhoz nincs post!!!!');
+        const errorMsg = 'Ehhez a gyártóhoz nincs post!!!!';
+        const error = [];
+        const addError = error.push(errorMsg);
+        res.send(readPosts);
+        console.log(error);
+        //res.send("Sorry! We don't have any post for this manufacturer.")
+    }
+}));
+app.get('/counter', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const readPosts = yield knex.select().from('post');
+    const noPost = [];
+    const counter = noPost.push(readPosts.length);
+    res.send(noPost);
+    console.log(readPosts.length);
+    console.log(noPost);
 }));
 app.listen(3001, () => {
     console.log("server port is 3001");
